@@ -7,7 +7,7 @@ Node.php originates from my ealier [answer on Stack Overflow](http://stackoverfl
 
 The node.php script installs an official node.js package, starts a hidden server on localhost:49999 with provided JS file and proxies all requests to it.
 
-### Warning! This is an alpha version, it is unsecure, you run it at your own risk!
+#### Warning! This is an alpha version, it may be unsecure, run it at your own risk!
 
 Requirements
 ------------
@@ -17,15 +17,11 @@ A PHP web hosting based on Linux with safe mode off and the following functions 
 How to run
 ----------
 
-Put the `node.php` file in your public_html (or similar) folder, then install node.js by browsing to: `http://example.org/node.php?install`.
-
-When succeeded, you can install your node.js app by uploading its folder or using npm: `http://example.org/node.php?npm=install jt-js-sample`.
-
-When everything goes fine, start your node.js instance by going to: `http://example.org/node.php?start=node_modules/jt-js-sample/index.js`.
-
-Now you can request your app by browsing to: `http://example.org/node.php?path=optional/request/path`. This will return a response from the running node.js app at `http://127.0.0.1:49999/optional/request/path`.
-
-Finally, stop your node.js server by loading: `http://example.org/node.php?stop`.
+ 1. Put the `node.php` file in your `public_html` (or similar) folder, then install node.js by browsing to: `http://example.org/node.php?install`.
+ 2. When succeeded, install your node.js app by uploading its folder or using npm: `http://example.org/node.php?npm=install jt-js-sample`.
+ 3. When everything goes fine, start your node.js instance by going to: `http://example.org/node.php?start=node_modules/jt-js-sample/index.js`.
+ 4. Now you can request your app by browsing to: `http://example.org/node.php?path=optional/request/path`. This will return a response from the running node.js app at `http://127.0.0.1:49999/optional/request/path`.
+ 5. Finally, stop your node.js server by loading: `http://example.org/node.php?stop`.
 
 Commands
 --------

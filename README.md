@@ -7,7 +7,7 @@ Node.php originates from my ealier [answer on Stack Overflow](http://stackoverfl
 
 The node.php script installs an official node.js package, starts a hidden server on localhost:49999 with provided JS file and proxies all requests to it.
 
-h3. Warning! This is an alpha version, it is unsecure, you run it on your own risk!
+### Warning! This is an alpha version, it is unsecure, you run it at your own risk!
 
 Requirements
 ------------
@@ -19,18 +19,20 @@ How to run
 
 Put the `node.php` file in your public_html (or similar) folder, then install node.js by browsing to: `http://example.org/node.php?install`.
 
-When succeeded, you can install your node.js app by copying its folder or by using npm: `http://example.org/node.php?npm=install jt-js-sample`.
+When succeeded, you can install your node.js app by uploading its folder or using npm: `http://example.org/node.php?npm=install jt-js-sample`.
 
 When everything goes fine, start your node.js instance by going to: `http://example.org/node.php?start=node_modules/jt-js-sample/index.js`.
 
-Finally, you can request your app by browsing to: `http://example.org/node.php?path=optional/request/path`. This will return a response from the running node.js app at `http://127.0.0.1:49999/optional/request/path`.
+Now you can request your app by browsing to: `http://example.org/node.php?path=optional/request/path`. This will return a response from the running node.js app at `http://127.0.0.1:49999/optional/request/path`.
+
+Finally, stop your node.js server by loading: `http://example.org/node.php?stop`.
 
 Commands
 --------
 
 `node.php[?path=some/path]` - serves an already running node.js app with an optional request path (no leading slash)
 
-The following commands require the `ADMIN_MODE` on:
+The following commands require the `ADMIN_MODE` set to `true` (line 13 of `node.php`):
 
 `node.php?install` - downloads and extracts node.js into the `node` folder.
 
@@ -53,5 +55,3 @@ License
 Node.js is developed by Joyent et al. under the MIT License.
 
 Node.php is developed by Jerzy Głowacki under the MIT License.
-
-*[LAMP]: Linux, Apache, MySQL, PHP

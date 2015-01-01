@@ -7,7 +7,7 @@ Node.php originates from my ealier [answer on Stack Overflow](http://stackoverfl
 
 The node.php script installs an official node.js package, starts a hidden server on localhost:49999 with provided JS file and proxies all requests to it.
 
-#### Warning! This is an alpha version, it may be unsecure, run it at your own risk!
+#### Warning! This is an alpha version, it may be insecure, run it at your own risk!
 
 Requirements
 ------------

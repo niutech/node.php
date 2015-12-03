@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Node.php v0.1
+ * Node.php v0.2
  * (c) 2014 Jerzy Głowacki
  * MIT License
  */
@@ -12,7 +12,7 @@ set_time_limit(120);
 
 define("ADMIN_MODE", false); //set to true to allow unsafe operations, set back to false when finished
 
-define("NODE_VER", "v0.10.33");
+define("NODE_VER", "v5.1.0");
 
 define("NODE_FILE", "node-" . NODE_VER . "-linux-x86.tar.gz");
 
@@ -97,7 +97,7 @@ function node_npm($cmd) {
 		return;
 	}
 	$cmd = escapeshellcmd(NODE_DIR . "/bin/npm $cmd");
-	echo "Running: npm $cmd\n";
+	echo "Running: $cmd\n";
 	$ret = -1;
 	passthru($cmd, $ret);
 	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\n";

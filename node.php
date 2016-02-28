@@ -1,8 +1,8 @@
 <?php
 
 /**
- * Node.php v0.2
- * (c) 2014 Jerzy Głowacki
+ * Node.php v0.3
+ * (c) 2016 Jerzy Głowacki
  * MIT License
  */
 
@@ -14,7 +14,9 @@ define("ADMIN_MODE", false); //set to true to allow unsafe operations, set back 
 
 define("NODE_VER", "v5.1.0");
 
-define("NODE_FILE", "node-" . NODE_VER . "-linux-x86.tar.gz");
+define("NODE_ARCH", "x" . substr(php_uname("m"), -2)); //x86 or x64
+
+define("NODE_FILE", "node-" . NODE_VER . "-linux-" . NODE_ARCH . ".tar.gz");
 
 define("NODE_URL", "http://nodejs.org/dist/" . NODE_VER . "/" . NODE_FILE);
 
@@ -41,7 +43,7 @@ function node_install() {
 		echo $resp === true ? "Done.\n" : "Failed. Error: curl_error($curl)\n";
 	}
 	echo "Installing Node.js:\n";
-	passthru("tar -xzf " . NODE_FILE . " 2>&1 && mv node-" . NODE_VER . "-linux-x86 " . NODE_DIR . " && touch nodepid && rm -f " . NODE_FILE, $ret);
+	passthru("tar -xzf " . NODE_FILE . " 2>&1 && mv node-" . NODE_VER . "-linux-" . NODE_ARCH . " " . NODE_DIR . " && touch nodepid && rm -f " . NODE_FILE, $ret);
 	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\nTry putting node folder via (S)FTP, so that " . __DIR__ . "/node/bin/node exists.";
 }
 
@@ -96,11 +98,11 @@ function node_npm($cmd) {
 		echo "Node.js is not yet installed. <a href='?install'>Install it</a>.\n";
 		return;
 	}
-	$cmd = escapeshellcmd(NODE_DIR . "/bin/npm $cmd");
+	$cmd = escapeshellcmd(NODE_DIR . "/bin/npm --cache ./.npm -- $cmd");
 	echo "Running: $cmd\n";
 	$ret = -1;
 	passthru($cmd, $ret);
-	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\n";
+	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret. See <a href=\"npm-debug.log\">npm-debug.log</a>\n";
 }
 
 function node_serve($path = "") {

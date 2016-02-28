@@ -12,7 +12,7 @@ set_time_limit(120);
 
 define("ADMIN_MODE", false); //set to true to allow unsafe operations, set back to false when finished
 
-define("NODE_VER", "v5.1.0");
+define("NODE_VER", "v5.7.0");
 
 define("NODE_ARCH", "x" . substr(php_uname("m"), -2)); //x86 or x64
 

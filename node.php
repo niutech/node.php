@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Node.php v0.3
+ * Node.php v0.4
  * (c) 2016 Jerzy Głowacki
  * MIT License
  */
@@ -122,7 +122,17 @@ function node_serve($path = "") {
 	$curl = curl_init("http://127.0.0.1:" . NODE_PORT . "/$path");
 	curl_setopt($curl, CURLOPT_HEADER, 1);
 	curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-	$resp = curl_exec($curl);
+        $headers = array();
+        foreach(getallheaders() as $key => $value) {
+                $headers[] = $key . ": " . $value;
+        }
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $_SERVER["REQUEST_METHOD"]);
+        if($_SERVER["REQUEST_METHOD"] === "POST") {
+                curl_setopt($curl, CURLOPT_POST, 1);
+                curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($_POST));
+        }
+ 	$resp = curl_exec($curl);
 	if($resp === false) {
 		node_head();
 		echo "Error requesting $path: " . curl_error($curl);

@@ -12,6 +12,9 @@ set_time_limit(120);
 
 define("ADMIN_MODE", false); //set to true to allow unsafe operations, set back to false when finished
 
+//set to true for shared hosts that periodically kill user's processes (such as node)
+define("RESTART_PROCESS", false);
+
 define("NODE_VER", "v5.7.0");
 
 define("NODE_ARCH", "x" . substr(php_uname("m"), -2)); //x86 or x64
@@ -114,6 +117,14 @@ function node_serve($path = "") {
 	}
 	$node_pid = intval(file_get_contents("nodepid"));
 	if($node_pid === 0) {
+		$nodestart = file_get_contents('nodestart');
+		if(($RESTART_PROCESS === true) && !is_null($nodestart)){
+			node_start($nodestart);
+			//wait for node process to start, then retry to node_serve
+			sleep(5);
+			node_serve($path);
+			return;
+		}
 		node_head();
 		echo "Node.js is not yet running. Switch to Admin Mode and <a href='?start'>Start it</a>\n";
 		node_foot();
@@ -164,6 +175,7 @@ function node_dispatch() {
 		} elseif(isset($_GET['uninstall'])) {
 			node_uninstall();
 		} elseif(isset($_GET['start'])) {
+			file_put_contents('nodestart', $_GET['start']);
 			node_start($_GET['start']);
 		} elseif(isset($_GET['stop'])) {
 			node_stop();

@@ -117,17 +117,20 @@ function node_serve($path = "") {
 	}
 	$node_pid = intval(file_get_contents("nodepid"));
 	if($node_pid === 0) {
+		node_head();
+		echo "Node.js is not yet running. Switch to Admin Mode and <a href='?start'>Start it</a>\n";
+		node_foot();
+		return;
+	}elseif($RESTART_PROCESS && $node_pid && !posix_getpgid($node_pid)){
 		$nodestart = file_get_contents('nodestart');
-		if(($RESTART_PROCESS === true) && !is_null($nodestart)){
+		if($nodestart){
 			node_start($nodestart);
 			//wait for node process to start, then retry to node_serve
 			sleep(5);
 			node_serve($path);
 			return;
 		}
-		node_head();
-		echo "Node.js is not yet running. Switch to Admin Mode and <a href='?start'>Start it</a>\n";
-		node_foot();
+		echo "Please switch to Admin Mode and manually restart the server. <a href='?start'>Start it</a>\n";
 		return;
 	}
 	$curl = curl_init("http://127.0.0.1:" . NODE_PORT . "/$path");

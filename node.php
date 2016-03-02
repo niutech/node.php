@@ -75,6 +75,9 @@ function node_start($file) {
 	$node_pid = exec("PORT=" . NODE_PORT . " " . NODE_DIR . "/bin/node $file >nodeout 2>&1 & echo $!");
 	echo $node_pid > 0 ? "Done. PID=$node_pid\n" : "Failed.\n";
 	file_put_contents("nodepid", $node_pid, LOCK_EX);
+	if($node_pid>0){
+		file_put_contents('nodestart', $file, LOCK_EX);
+	}
 	sleep(1); //Wait for node to spin up
 	echo file_get_contents("nodeout");
 }
@@ -178,7 +181,6 @@ function node_dispatch() {
 		} elseif(isset($_GET['uninstall'])) {
 			node_uninstall();
 		} elseif(isset($_GET['start'])) {
-			file_put_contents('nodestart', $_GET['start']);
 			node_start($_GET['start']);
 		} elseif(isset($_GET['stop'])) {
 			node_stop();

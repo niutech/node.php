@@ -45,6 +45,26 @@ Demo
 
 [Here is a live demo](http://juvenia.info/node_modules/jt-js-sample/) on a dirt cheap PHP shared hosting.
 
+Troubleshooting
+---------------
+
+In order to troubleshoot any problems with running node.php, connect to your host using SSH and run exact node.php commands manually:
+
+ 1. Go to your document root directory (often `~/public_html/`) and check if `node` directory exists there.
+ 2. If yes, go to step 3, otherwise download node for your architecture:
+    
+    ```
+    wget http://nodejs.org/dist/node-v5.7.0-linux-x86.tar.gz
+    tar -xzf node-v5.7.0-linux-x86.tar.gz
+    mv node-v5.7.0-linux-x86/ node/
+    rm -f node-v5.7.0-linux-x86.tar.gz
+    ```
+    
+ 3. Run node on port 49999 (or other): `PORT=49999 node/bin/node [path/to/index.js] &`
+ 4. Connect to node instance: `curl http://127.0.0.1:49999/[some/path]`
+ 5. If you get the HTML response, the problem most probably lies in PHP and its permissions.
+ 6. Kill node process: `killall node`
+
 License
 -------
 

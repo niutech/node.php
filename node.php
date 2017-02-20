@@ -55,6 +55,7 @@ function node_uninstall() {
 	echo "Unnstalling Node.js:\n";
 	passthru("rm -rf " . NODE_DIR . " nodepid", $ret);
 	passthru("rm -rf node_modules", $ret);
+	passthru("rm -rf .npm", $ret);
 	passthru("rm -rf nodeout", $ret);
 	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\n";
 }

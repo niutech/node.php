@@ -91,7 +91,7 @@ function node_stop() {
 	}
 	echo "Stopping Node.js with PID=$node_pid:\n";
 	$ret = -1;
-	passthru("kill $node_pid", $ret);
+	passthru("kill -9 $node_pid", $ret);
 	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\n";
 	file_put_contents("nodepid", '', LOCK_EX);
 }

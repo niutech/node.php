@@ -53,10 +53,10 @@ function node_uninstall() {
 		return;
 	}
 	echo "Unnstalling Node.js:\n";
-	passthru("rm -rf " . NODE_DIR . " nodepid", $ret);
-	passthru("rm -rf node_modules", $ret);
-	passthru("rm -rf .npm", $ret);
-	passthru("rm -rf nodeout", $ret);
+	passthru("rm -rfv " . NODE_DIR . " nodepid", $ret);
+	passthru("rm -rfv node_modules", $ret);
+	passthru("rm -rfv .npm", $ret);
+	passthru("rm -rfv nodeout", $ret);
 	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\n";
 }
 

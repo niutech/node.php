@@ -10,6 +10,9 @@
 //define("ADMIN_MODE", true);
 define("ADMIN_MODE", false); //set to true to allow unsafe operations, set back to false when finished
 
+//set to true for shared hosts that periodically kill user's processes (such as node)
+define("RESTART_PROCESS", false);
+
 error_reporting(E_ALL);
 set_time_limit(120);
 define("NODE_VER", "v10.6.0");
@@ -90,7 +93,10 @@ function node_start($file) {
 	echo "Starting: node $file\n";
 	$node_pid = exec("PORT=" . NODE_PORT . " " . NODE_DIR . "/bin/node $file >nodeout 2>&1 & echo $!");
 	echo $node_pid > 0 ? "Done. PID=$node_pid\n" : "Failed.\n";
-	file_put_contents("nodepid", $node_pid, LOCK_EX);
+	file_put_contents("nodepid", $node_pid, LOCK_EX);	
+	if($node_pid>0){
+		file_put_contents('nodestart', $file, LOCK_EX);
+	}
 	sleep(1); //Wait for node to spin up
 	echo file_get_contents("nodeout");
 }
@@ -130,6 +136,17 @@ function node_serve($path = "") {
 		echo "Node.js is not yet installed. Switch to Admin Mode and <a href='?install'>Install it</a>.\n";
 		node_foot();
 		return;
+	} elseif ($RESTART_PROCESS && $node_pid && !posix_getpgid($node_pid)) {
+		$nodestart = file_get_contents('nodestart');
+		if($nodestart){
+			node_start($nodestart);
+			//wait for node process to start, then retry to node_serve
+			sleep(5);
+			node_serve($path);
+			return;
+		}
+		echo "Please switch to Admin Mode and manually restart the server. <a href='?start'>Start it</a>\n";
+		return;		
 	}
 	$node_pid = intval(file_get_contents("nodepid"));
 	if($node_pid === 0) {

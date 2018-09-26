@@ -3,26 +3,42 @@
 /**
  * Node.php v0.4
  * (c) 2016 Jerzy Głowacki
+ *     2016/7/21 Add getallheaders() for v5.3
  * MIT License
  */
 
-error_reporting(E_ALL);
-
-set_time_limit(120);
-
+//define("ADMIN_MODE", true);
 define("ADMIN_MODE", false); //set to true to allow unsafe operations, set back to false when finished
 
+error_reporting(E_ALL);
+set_time_limit(120);
 define("NODE_VER", "v10.6.0");
-
 define("NODE_ARCH", "x" . substr(php_uname("m"), -2)); //x86 or x64
-
 define("NODE_FILE", "node-" . NODE_VER . "-linux-" . NODE_ARCH . ".tar.gz");
-
 define("NODE_URL", "http://nodejs.org/dist/" . NODE_VER . "/" . NODE_FILE);
-
 define("NODE_DIR", "node");
-
 define("NODE_PORT", 49999);
+//change ADMIN=true
+//wget http://download.redis.io/releases/redis-3.2.1.tar.gz && tar zxf redis-3.2.1.tar.gz && cd redis-3.2.1 && make && src/redis-server #start redis on 127.0.0.1:6379
+//git clone https://github.com/weixingsun/docker-redis.git && $HOST/service/node.php?start=docker-redis/src/main.js  #start nodejs server
+//change ADMIN=false
+//wget $HOST/service/node.php?path=api/msg/car:1,2:3
+
+if (!function_exists('getallheaders')) 
+{ 
+    function getallheaders() 
+    { 
+           $headers = ''; 
+       foreach ($_SERVER as $name => $value) 
+       { 
+           if (substr($name, 0, 5) == 'HTTP_') 
+           { 
+               $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value; 
+           } 
+       } 
+       return $headers; 
+    } 
+} 
 
 function node_install() {
 	if(file_exists(NODE_DIR)) {
@@ -122,7 +138,11 @@ function node_serve($path = "") {
 		node_foot();
 		return;
 	}
-	$curl = curl_init("http://127.0.0.1:" . NODE_PORT . "/$path");
+        $url = "http://127.0.0.1:" . NODE_PORT . "/$path";
+        //header('HTTP/1.1 307 Temporary Redirect');
+        //header("Location: $url");
+	
+        $curl = curl_init($url);
 	curl_setopt($curl, CURLOPT_HEADER, 1);
 	curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         $headers = array();
@@ -132,9 +152,25 @@ function node_serve($path = "") {
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $_SERVER["REQUEST_METHOD"]);
         if($_SERVER["REQUEST_METHOD"] === "POST") {
-                curl_setopt($curl, CURLOPT_POST, 1);
-                curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($_POST));
-        }
+            curl_setopt($curl, CURLOPT_POST, 1);
+            if (count($_POST)==0) {  //strlen($str_json_params) > 0) && isValidJSON($json_params)) {
+                $str_json_params = file_get_contents('php://input');
+                curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+                curl_setopt($curl, CURLOPT_POSTFIELDS, $str_json_params);
+                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            }else{
+                //$str_header = implode(",", $headers);
+                $fields = http_build_query($_POST);
+                curl_setopt($curl, CURLOPT_POSTFIELDS, $fields);
+                //error_log("post json=$str_json_params ");
+            }
+        } else if($_SERVER["REQUEST_METHOD"] === "PUT" || $_SERVER["REQUEST_METHOD"] === "DELETE"){
+	    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $_SERVER["REQUEST_METHOD"]);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, file_get_contents('php://input'));
+            curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+	}
+        //error_log("url=$url");
  	$resp = curl_exec($curl);
 	if($resp === false) {
 		node_head();
@@ -177,11 +213,15 @@ function node_dispatch() {
 		}
 		node_foot();
 	} else {
-		if(isset($_GET['path'])) {
+		$full_url = $_SERVER['REQUEST_URI'];
+                $path = explode("?path=",$full_url);
+		//error_log("path=$path[1]");
+		node_serve($path[1]);
+		/*if(isset($_GET['path'])) {
 			node_serve($_GET['path']);
 		} else {
 			node_serve();
-		}
+		}*/
 	}
 }
 

@@ -244,6 +244,8 @@ function node_dispatch() {
 		$full_url = $_SERVER['REQUEST_URI'];
 		$path = explode("?path=",$full_url);
 		node_serve($path[1]);
+	} elseif (isset($getCommand)) {
+		node_serve($getCommand);
 	}
 }
 

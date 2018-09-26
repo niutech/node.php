@@ -213,32 +213,37 @@ function node_foot() {
 }
 
 function node_dispatch() {
-	if(ADMIN_MODE) {
+	$checkScript = (realpath($_SERVER['argv'][0]) == __FILE__);
+	$checkArgs = isset($_SERVER['argv'][1]);
+	$checkAdmin = ($checkScript && $checkArgs) && ($_SERVER['argv'][1] == '--admin');
+	$getCommand = (($checkScript && $checkArgs) && !$checkAdmin) ? $_SERVER['argv'][1] : (($checkAdmin) ? $_SERVER['argv'][2] : '');
+	if(ADMIN_MODE || $checkAdmin) {
 		node_head();
-		if(isset($_GET['install'])) {
+		if (isset($_GET['install']) || ($getCommand == 'install')){
 			node_install();
-		} elseif(isset($_GET['uninstall'])) {
+		} elseif (isset($_GET['uninstall']) || ($getCommand == 'uninstall')) {
 			node_uninstall();
-		} elseif(isset($_GET['start'])) {
+		} elseif (isset($_GET['start']) || ($getCommand == 'start')) {
 			node_start($_GET['start']);
-		} elseif(isset($_GET['stop'])) {
+		} elseif (isset($_GET['stop']) || ($getCommand == 'stop')) {
 			node_stop();
-		} elseif(isset($_GET['npm'])) {
-			node_npm($_GET['npm']);
+		} elseif (isset($_GET['npm']) || ($getCommand == 'npm')) {
+			if (empty($getCommand))
+				node_npm($_GET['npm']);
+			else {
+				$getCommand = $_SERVER['argv'];	
+				unset($getCommand[0]);
+				unset($getCommand[1]);
+				node_npm($getCommand);
+			}				
 		} else {
 			echo "You are in Admin Mode. Switch back to normal mode to serve your node app.";
 		}
 		node_foot();
-	} else {
+	} elseif (isset($_SERVER['REQUEST_URI'])) {
 		$full_url = $_SERVER['REQUEST_URI'];
-                $path = explode("?path=",$full_url);
-		//error_log("path=$path[1]");
+		$path = explode("?path=",$full_url);
 		node_serve($path[1]);
-		/*if(isset($_GET['path'])) {
-			node_serve($_GET['path']);
-		} else {
-			node_serve();
-		}*/
 	}
 }
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Node.php v0.4
+ * Node.php v0.5
  * (c) 2016 Jerzy Głowacki
  *     2016/7/21 Add getallheaders() for v5.3
  * MIT License
@@ -14,18 +14,31 @@ define("ADMIN_MODE", false); //set to true to allow unsafe operations, set back 
 define("RESTART_PROCESS", false);
 
 error_reporting(E_ALL);
-set_time_limit(120);
-define("NODE_VER", "v10.6.0");
+
+function getDistro()
+{
+	$OSDistro = array();
+    if (strtolower(substr(PHP_OS, 0, 3)) === 'lin')
+		$OSDistro = ['-linux-', '.tar.gz'];
+	elseif (strtolower(substr(PHP_OS, 0, 3)) === 'win')
+		$OSDistro = ['-win-', '.zip'];
+	elseif (strtolower(substr(PHP_OS, 0, 3)) === 'dar')
+		$OSDistro = ['-darwin-', '.tar.gz'];
+	else
+		$OSDistro = ['-'.strtolower(substr(PHP_OS, 0, 5)).'-', '.tar.gz'];
+	return $OSDistro;
+}
+$OSDistro = getDistro();
+define( '_DS', DIRECTORY_SEPARATOR );
+
+define("NODE_VER", "v10.11.0");
+define("NODE_OS", $OSDistro[0]);
 define("NODE_ARCH", "x" . substr(php_uname("m"), -2)); //x86 or x64
-define("NODE_FILE", "node-" . NODE_VER . "-linux-" . NODE_ARCH . ".tar.gz");
+define("NODE_FILE", "node-" . NODE_VER . NODE_OS . NODE_ARCH . $OSDistro[1]);
+define("NODE_FOLDER", "node-" . NODE_VER . NODE_OS . NODE_ARCH);
 define("NODE_URL", "http://nodejs.org/dist/" . NODE_VER . "/" . NODE_FILE);
 define("NODE_DIR", "node");
 define("NODE_PORT", 49999);
-//change ADMIN=true
-//wget http://download.redis.io/releases/redis-3.2.1.tar.gz && tar zxf redis-3.2.1.tar.gz && cd redis-3.2.1 && make && src/redis-server #start redis on 127.0.0.1:6379
-//git clone https://github.com/weixingsun/docker-redis.git && $HOST/service/node.php?start=docker-redis/src/main.js  #start nodejs server
-//change ADMIN=false
-//wget $HOST/service/node.php?path=api/msg/car:1,2:3
 
 if (!function_exists('getallheaders')) 
 { 
@@ -42,6 +55,46 @@ if (!function_exists('getallheaders'))
        return $headers; 
     } 
 } 
+
+function recurse_copy($src, $dst) { 
+    if ( ! is_dir($src) )
+        return false;
+    $dir = opendir($src); 
+    @mkdir($dst); 
+    while(false !== ( $file = readdir($dir)) ) { 
+        if (( $file != '.' ) && ( $file != '..' )) { 
+            if ( is_dir($src . _DS . $file) ) { 
+                recurse_copy($src . _DS . $file,$dst . _DS . $file); 
+            } 
+            else { 
+                copy($src . _DS . $file,$dst . _DS . $file); 
+            } 
+        } 
+    } 
+    closedir($dir); 
+    return true;
+} 
+
+function recurse_delete($directory, $options = array()) {
+    if(!isset($options['traverseSymlinks']))
+        $options['traverseSymlinks']=false;
+    $files = array_diff(scandir($directory), array('.','..'));
+    foreach ($files as $file)
+    {
+        $dirfile = $directory. _DS .$file;
+        if (is_dir($dirfile))
+        {
+            if(!$options['traverseSymlinks'] && is_link(rtrim($file, _DS))) {
+                unlink($dirfile);
+            } else {
+                recurse_delete($dirfile, $options);
+            }
+        } else {
+            unlink($dirfile);
+        }
+    }
+    return rmdir($directory);
+}
 
 function node_install() {
 	if(file_exists(NODE_DIR)) {
@@ -62,7 +115,31 @@ function node_install() {
 		echo $resp === true ? "Done.\n" : "Failed. Error: curl_error($curl)\n";
 	}
 	echo "Installing Node.js:\n";
-	passthru("tar -xzf " . NODE_FILE . " 2>&1 && mv node-" . NODE_VER . "-linux-" . NODE_ARCH . " " . NODE_DIR . " && touch nodepid && rm -f " . NODE_FILE, $ret);
+	if (NODE_OS == '-win-')
+	{
+		$zip = new ZipArchive;
+		$ret = $zip->open(NODE_FILE);
+		if ($ret === TRUE) {
+			$zip->extractTo('.');
+			$zip->close();
+		}
+	} else {
+		// decompress from gz
+		$p = new PharData(NODE_FILE);
+		$p->decompress(); // creates *.tar
+
+		// unarchive from the tar
+		$archive = new PharData(str_replace(NODE_FILE, 'node-v10.tar', NODE_FILE));
+		$archive->extractTo('.');
+		unlink('node-v10.tar');
+
+		//passthru("tar -xzf " . NODE_FILE . " 2>&1 && mv " . NODE_FOLDER . " " . NODE_DIR . " && touch nodepid && rm -f " . NODE_FILE, $ret);
+	}
+	if (recurse_copy(NODE_FOLDER, NODE_DIR)) 
+		$ret = file_put_contents('nodepid', null);		
+	else
+		$ret = 'Extracting';
+	recurse_delete(NODE_FOLDER);
 	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\nTry putting node folder via (S)FTP, so that " . __DIR__ . "/node/bin/node exists.";
 }
 
@@ -72,11 +149,14 @@ function node_uninstall() {
 		return;
 	}
 	echo "Unnstalling Node.js:\n";
-	passthru("rm -rfv " . NODE_DIR . " nodepid", $ret);
-	passthru("rm -rfv node_modules", $ret);
-	passthru("rm -rfv .npm", $ret);
-	passthru("rm -rfv nodeout", $ret);
-	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\n";
+	
+	$ret = recurse_delete(NODE_DIR);
+	unlink('nodepid');
+	//passthru("rm -rfv " . NODE_DIR . " nodepid", $ret);
+	//passthru("rm -rfv node_modules", $ret);
+	//passthru("rm -rfv .npm", $ret);
+	//passthru("rm -rfv nodeout", $ret);
+	echo ($ret) ? "Done.\n" : "Failed. Error: $ret\n";
 }
 
 function node_start($file) {

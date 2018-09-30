@@ -37,7 +37,7 @@ define("NODE_ARCH", "x" . substr(php_uname("m"), -2)); //x86 or x64
 define("NODE_FILE", "node-" . NODE_VER . NODE_OS . NODE_ARCH . $OSDistro[1]);
 define("NODE_FOLDER", "node-" . NODE_VER . NODE_OS . NODE_ARCH);
 define("NODE_URL", "http://nodejs.org/dist/" . NODE_VER . "/" . NODE_FILE);
-define("NODE_DIR", "node");
+define("NODE_DIR", __DIR__. _DS. "node");
 define("NODE_PORT", 49999);
 
 if (!function_exists('getallheaders')) 
@@ -264,7 +264,7 @@ function node_npm($cmd)
 
 function node_serve($path = "") 
 {
-	if(!file_exists(NODE_DIR)) {
+	if (!file_exists(NODE_DIR)) {
 		node_head();
 		echo "Node.js is not yet installed. Switch to Admin Mode and <a href='?install'>Install it</a>.\n";
 		node_foot();
@@ -281,6 +281,7 @@ function node_serve($path = "")
 		echo "Please switch to Admin Mode and manually restart the server. <a href='?start'>Start it</a>\n";
 		return;		
 	}
+
 	$node_pid = intval(file_get_contents("nodepid"));
 	if($node_pid === 0) {
 		node_head();

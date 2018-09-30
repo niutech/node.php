@@ -56,7 +56,8 @@ if (!function_exists('getallheaders'))
     } 
 } 
 
-function recurse_copy($src, $dst) { 
+function recurse_copy($src, $dst) 
+{ 
     if ( ! is_dir($src) )
         return false;
     $dir = opendir($src); 
@@ -64,10 +65,10 @@ function recurse_copy($src, $dst) {
     while(false !== ( $file = readdir($dir)) ) { 
         if (( $file != '.' ) && ( $file != '..' )) { 
             if ( is_dir($src . _DS . $file) ) { 
-                recurse_copy($src . _DS . $file,$dst . _DS . $file); 
+                recurse_copy($src._DS.$file, $dst._DS.$file); 
             } 
             else { 
-                copy($src . _DS . $file,$dst . _DS . $file); 
+                copy($src._DS.$file, $dst._DS.$file); 
             } 
         } 
     } 
@@ -75,13 +76,14 @@ function recurse_copy($src, $dst) {
     return true;
 } 
 
-function recurse_delete($directory, $options = array()) {
+function recurse_delete($directory, $options = array()) 
+{
     if(!isset($options['traverseSymlinks']))
-        $options['traverseSymlinks']=false;
-    $files = array_diff(scandir($directory), array('.','..'));
+        $options['traverseSymlinks'] = false;
+    $files = array_diff(scandir($directory), array('.', '..'));
     foreach ($files as $file)
     {
-        $dirfile = $directory. _DS .$file;
+        $dirfile = $directory._DS.$file;
         if (is_dir($dirfile))
         {
             if(!$options['traverseSymlinks'] && is_link(rtrim($file, _DS))) {
@@ -96,13 +98,14 @@ function recurse_delete($directory, $options = array()) {
     return rmdir($directory);
 }
 
-function node_install() {
+function node_install() 
+{
 	if(file_exists(NODE_DIR)) {
-		echo "Node.js is already installed.\n";
+		echo "Node.js is already installed.<br>\n";
 		return;
 	}
 	if(!file_exists(NODE_FILE)) {
-		echo "Downloading Node.js from " . NODE_URL . ":\n\n";
+		echo "Downloading Node.js from " . NODE_URL . ":<br>\n\n";
 		$fp = fopen(NODE_FILE, "w");
 		flock($fp, LOCK_EX);
 		$curl = curl_init(NODE_URL);
@@ -112,9 +115,9 @@ function node_install() {
 		curl_close($curl);
 		flock($fp, LOCK_UN);
 		fclose($fp);
-		echo $resp === true ? "Done.\n" : "Failed. Error: curl_error($curl)\n";
+		echo $resp === true ? "Done.<br>\n" : "Failed. Error: curl_error($curl)<br>\n";
 	}
-	echo "Installing Node.js:\n";
+	echo "\n<br>Installing Node.js:<br>\n";
 	if (NODE_OS == '-win-')
 	{
 		$zip = new ZipArchive;
@@ -136,14 +139,13 @@ function node_install() {
 		//passthru("tar -xzf " . NODE_FILE . " 2>&1 && mv " . NODE_FOLDER . " " . NODE_DIR . " && touch nodepid && rm -f " . NODE_FILE, $ret);
 	}
 	if (recurse_copy(NODE_FOLDER, NODE_DIR)) 
-		$ret = file_put_contents('nodepid', null);		
-	else
-		$ret = 'Extracting';
+		$ret = touch('nodepid');
 	recurse_delete(NODE_FOLDER);
-	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\nTry putting node folder via (S)FTP, so that " . __DIR__ . "/node/bin/node exists.";
+	echo (!$ret) ? "Done.\n" : "Failed. Error: $ret\nTry putting node folder via (S)FTP, so that " . __DIR__ . "/node/bin/node exists.";
 }
 
-function node_uninstall() {
+function node_uninstall() 
+{
 	if(!file_exists(NODE_DIR)) {
 		echo "Node.js is not yet installed.\n";
 		return;
@@ -159,7 +161,8 @@ function node_uninstall() {
 	echo ($ret) ? "Done.\n" : "Failed. Error: $ret\n";
 }
 
-function node_start($file) {
+function node_start($file) 
+{
 	if(!file_exists(NODE_DIR)) {
 		echo "Node.js is not yet installed. <a href='?install'>Install it</a>.\n";
 		return;
@@ -171,7 +174,14 @@ function node_start($file) {
 	}
 	$file = escapeshellarg($file);
 	echo "Starting: node $file\n";
-	$node_pid = exec("PORT=" . NODE_PORT . " " . NODE_DIR . "/bin/node $file >nodeout 2>&1 & echo $!");
+
+	if (NODE_OS == '-win-')
+	{
+        $node_pid = pclose(popen("start /B PORT=" . NODE_PORT . " " . NODE_DIR . "/node ". $file, "r"));
+    } else {
+		$node_pid = exec("PORT=" . NODE_PORT . " " . NODE_DIR . "/bin/node $file >nodeout 2>&1 & echo $!");
+    }
+
 	echo $node_pid > 0 ? "Done. PID=$node_pid\n" : "Failed.\n";
 	file_put_contents("nodepid", $node_pid, LOCK_EX);	
 	if($node_pid>0){
@@ -181,7 +191,13 @@ function node_start($file) {
 	echo file_get_contents("nodeout");
 }
 
-function node_stop() {
+function kill($pid)
+{
+    return (NODE_OS == '-win-')  ? exec("taskkill /F /T /PID $pid") : exec("kill -9 $pid");
+}
+
+function node_stop() 
+{
 	if(!file_exists(NODE_DIR)) {
 		echo "Node.js is not yet installed. <a href='?install'>Install it</a>.\n";
 		return;
@@ -193,12 +209,13 @@ function node_stop() {
 	}
 	echo "Stopping Node.js with PID=$node_pid:\n";
 	$ret = -1;
-	passthru("kill $node_pid", $ret);
+	$ret = kill($node_pid);
 	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret\n";
 	file_put_contents("nodepid", '', LOCK_EX);
 }
 
-function node_npm($cmd) {
+function node_npm($cmd) 
+{
 	if(!file_exists(NODE_DIR)) {
 		echo "Node.js is not yet installed. <a href='?install'>Install it</a>.\n";
 		return;
@@ -210,7 +227,8 @@ function node_npm($cmd) {
 	echo $ret === 0 ? "Done.\n" : "Failed. Error: $ret. See <a href=\"npm-debug.log\">npm-debug.log</a>\n";
 }
 
-function node_serve($path = "") {
+function node_serve($path = "") 
+{
 	if(!file_exists(NODE_DIR)) {
 		node_head();
 		echo "Node.js is not yet installed. Switch to Admin Mode and <a href='?install'>Install it</a>.\n";
@@ -284,15 +302,18 @@ function node_serve($path = "") {
 	curl_close($curl);
 }
 
-function node_head() {
+function node_head() 
+{
 	echo '<!DOCTYPE html><html><head><title>Node.php</title><meta charset="utf-8"><body style="font-family:Helvetica,sans-serif;"><h1>Node.php</h1><pre>';
 }
 
-function node_foot() {
+function node_foot() 
+{
 	echo '</pre><p><a href="https://github.com/niutech/node.php" target="_blank">Powered by node.php</a></p></body></html>';
 }
 
-function node_dispatch() {
+function node_dispatch() 
+{
 	$checkScript = (realpath($_SERVER['argv'][0]) == __FILE__);
 	$checkArgs = isset($_SERVER['argv'][1]);
 	$checkAdmin = ($checkScript && $checkArgs) && ($_SERVER['argv'][1] == '--admin');

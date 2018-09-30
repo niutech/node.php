@@ -154,10 +154,6 @@ function node_uninstall()
 	
 	$ret = recurse_delete(NODE_DIR);
 	unlink('nodepid');
-	//passthru("rm -rfv " . NODE_DIR . " nodepid", $ret);
-	//passthru("rm -rfv node_modules", $ret);
-	//passthru("rm -rfv .npm", $ret);
-	//passthru("rm -rfv nodeout", $ret);
 	echo ($ret) ? "Done.\n" : "Failed. Error: $ret\n";
 }
 
@@ -175,25 +171,64 @@ function node_start($file)
 	$file = escapeshellarg($file);
 	echo "Starting: node $file\n";
 
-	if (NODE_OS == '-win-')
-	{
-        $node_pid = pclose(popen("start /B PORT=" . NODE_PORT . " " . NODE_DIR . "/node ". $file, "r"));
-    } else {
-		$node_pid = exec("PORT=" . NODE_PORT . " " . NODE_DIR . "/bin/node $file >nodeout 2>&1 & echo $!");
-    }
-
+	$node_pid = run($file,	NODE_DIR, ['PORT' => NODE_PORT]);
 	echo $node_pid > 0 ? "Done. PID=$node_pid\n" : "Failed.\n";
+
 	file_put_contents("nodepid", $node_pid, LOCK_EX);	
-	if($node_pid>0){
+	if ($node_pid>0) {
 		file_put_contents('nodestart', $file, LOCK_EX);
 	}
 	sleep(1); //Wait for node to spin up
-	echo file_get_contents("nodeout");
 }
 
 function kill($pid)
 {
     return (NODE_OS == '-win-')  ? exec("taskkill /F /T /PID $pid") : exec("kill -9 $pid");
+}
+
+function run($cmd, $startDir = null, $env = array())
+{
+	if(NODE_OS == '-win-') {  
+		$descriptorspec = array (
+			0 => array("pipe", "r"),  
+			1 => array("pipe", "w"),  
+		);  
+		
+		//proc_open — Execute a command  
+		//'start /b' runs command in the background  
+		if ( is_resource( $prog = proc_open('start /b node '.$cmd, $descriptorspec, $pipes, $startDir, $env) ) ) {  
+			//Get Parent process Id  
+			$ppid = proc_get_status($prog);  
+			$pid = $ppid['pid'];  
+		} else {  
+			echo("Failed to execute!");  
+			exit();  
+		}  
+
+		$output = array_filter(explode(" ", shell_exec("wmic process get parentprocessid,processid | find \"$pid\"")));  
+		array_pop($output);  
+		
+		$pid = end($output);  
+	} else {  
+		$descriptorspec = array (  
+			0 => array("pipe", "r"),  
+			1 => array("pipe", "w"),  
+		);  
+	  
+		//proc_open — Execute a command  
+		//'nohup' command line-utility will allow you to run command/process or shell script that can continue running in the background  
+		if (is_resource($prog = proc_open('nohup bin'._DS.'node '.$cmd, $descriptorspec, $pipes, $startDir, $env) ) ) {  
+			//Get Parent process Id   
+			$ppid = proc_get_status($prog);  
+			$pid = $ppid['pid'];  
+			
+			$pid = $pid + 1;  		
+		} else {  
+			echo("Failed to execute!");  
+			exit();  
+		}  
+	}  
+    return $pid;
 }
 
 function node_stop() 

@@ -20,7 +20,7 @@ define("NODE_FILE", "node-" . NODE_VER . "-linux-" . NODE_ARCH . ".tar.gz");
 
 define("NODE_URL", "http://nodejs.org/dist/" . NODE_VER . "/" . NODE_FILE);
 
-define("NODE_DIR", "node");
+define("NODE_DIR", "../node"); // change it to node if your hosting service don't allow to put file above public folder ..// e.g 000webhostapp while infinityfree and godaddy allows user to put file above public folder.
 
 define("NODE_PORT", 49999);
 
